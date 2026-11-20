@@ -15,8 +15,9 @@ npm run build    # production build into dist/
 
 ## Using it
 
-- **Landing page** (`#/`): the route (version 1) sketched on a globe, with the Kit / Planning / Route / External links dropdowns. Each dropdown entry opens a markdown page; use the pen button to edit it.
-- **Map page** (`#/map`): scroll down from the landing page (or click the sketch) to get there; scroll up at the top, or use **Overview**, to go back. Pick a route version, switch the base map, split the route into stages, name the stages, add notes, and write a description per version.
+- **Home** (`#/r/<route>`): the big BincioPacking title and one slide per route, each with its route (version 1) sketched on a globe and basic info. Change route with the side arrows, a sideways swipe / trackpad scroll, the ← → keys, or the dots.
+- **Route page** (`#/r/<route>/map`): scroll or swipe down from a route (or press ↓) to open it; scroll up at the top, or use **All routes**, to go back. It has the route's side menu and the map tools: route versions, base map, split points, elevation profile, stages and the version description.
+- **Side menu**: each route has its own dropdown menu (new routes start with the default Kit / Planning / Route / External links list). Every entry opens a markdown page (`#/r/<route>/page/<id>`); use the pen to edit it. **Edit menu** lets you rename, add and remove sections and pages.
 
 Everything you edit is saved as files under `content/` while `npm run dev` is running (see `content/README.md`), so commit those files to keep them.
 
@@ -26,10 +27,10 @@ Everything you edit is saved as files under `content/` while `npm run dev` is ru
 - `content/` – your editable markdown pages, route descriptions and stage plans
 - `vite.config.ts` – includes the small dev-server endpoint that saves `content/` files
 - `src/app.css` – design tokens (greys; green only for the route title and the sketch)
-- `src/App.svelte` – page routing (`#/`, `#/map`, `#/page/…`) and the slide transition between pages
-- `src/lib/views/` – `Landing` and `Workspace` (map page)
-- `src/lib/components/` – UI components (`RouteBackdrop`, `Sidebar`, `ContentPage`, `MarkdownPanel`, `DetailMap`, `StageRow`, …)
+- `src/App.svelte` – page routing (`#/r/<route>`, `…/map`, `…/page/<id>`), the slide transition between home and route page, track loading
+- `src/lib/views/` – `Home` (route carousel) and `Workspace` (route page)
+- `src/lib/components/` – UI components (`RouteBackdrop`, `Sidebar` + `SidebarSection` (with edit mode), `ContentPage`, `MarkdownPanel`, `DetailMap`, `StageRow`, …)
 - `src/lib/routes/` – track parsing (TCX/GPX), route catalog, stats, stage plans
 - `src/lib/content/` – content store (dev-server files, or localStorage in a production build) and markdown rendering
 - `src/lib/map/layers.ts` – base map tile layers (CyclOSM, OpenTopoMap, Esri satellite)
-- `src/lib/data.ts` – sidebar sections and pages
+- `src/lib/nav.ts` – per-route side menus: default sections, loading/saving

@@ -2,7 +2,8 @@
 
 Everything you edit in the app while running `npm run dev` is saved here as plain files:
 
-- `pages/<section>/<page>.md` – the pages behind the sidebar entries (Kit, Planning, Route, External links)
+- `routes/<route-id>/nav.json` – the route's side menu (sections and pages); missing = default menu
+- `routes/<route-id>/pages/<page-id>.md` – the markdown pages behind the side-menu entries
 - `routes/<route-id>/<version-id>/description.md` – the route description of each version
 - `routes/<route-id>/<version-id>/plan.json` – split points, stage names and stage notes of each version
 

@@ -1,25 +1,28 @@
 <script lang="ts">
-  import { pagePath, type NavItem, type NavSection } from '../data';
+  import { pagePath, type NavItem, type NavSection } from '../nav';
   import { readContent, savesToFiles, writeContent } from '../content/store';
   import MarkdownPanel from './MarkdownPanel.svelte';
 
   interface Props {
+    routeId: string;
     section: NavSection;
-    page: NavItem;
+    item: NavItem;
   }
 
-  let { section, page }: Props = $props();
+  let { routeId, section, item }: Props = $props();
 
-  const path = $derived(pagePath(section.id, page.slug));
+  const path = $derived(pagePath(routeId, item.id));
   let text = $state('');
   let status = $state<'loading' | 'ready' | 'error'>('loading');
   let message = $state('');
 
   $effect(() => {
     const p = path;
+    const legacy = item.legacy;
     status = 'loading';
     message = '';
     readContent(p)
+      .then(async (t) => (t === null && legacy ? readContent(legacy) : t))
       .then((t) => {
         if (p !== path) return;
         text = t ?? '';
@@ -44,13 +47,13 @@
   }
 </script>
 
-<article class="card page" aria-labelledby="page-title">
+<article class="page" aria-labelledby="page-title">
   <header>
     <div>
       <div class="crumb eyebrow">{section.title}</div>
-      <h2 id="page-title">{page.label}</h2>
+      <h2 id="page-title">{item.label || 'Untitled page'}</h2>
     </div>
-    <a class="close" href="#/" aria-label="Close page">
+    <a class="close" href="#/r/{routeId}/map" aria-label="Close page and show the route map">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
         <path d="M4 4 L12 12 M12 4 L4 12" />
       </svg>
@@ -63,7 +66,7 @@
     <p class="muted" role="alert">{message}</p>
   {:else}
     {#key path}
-      <MarkdownPanel value={text} label={page.label} placeholder="This page is empty. Use the pen to write it." onsave={save} />
+      <MarkdownPanel value={text} label={item.label} placeholder="This page is empty. Use the pen to write it." onsave={save} />
     {/key}
     {#if message}<p class="status" role="status">{message}</p>{/if}
   {/if}
@@ -71,12 +74,10 @@
 
 <style>
   .page {
-    padding: 28px 32px 32px;
     display: flex;
     flex-direction: column;
     gap: 20px;
     max-width: 860px;
-    width: 100%;
   }
   header {
     display: flex;
@@ -114,10 +115,5 @@
   }
   .status {
     font-size: 12px;
-  }
-  @media (max-width: 760px) {
-    .page {
-      padding: 20px 16px 24px;
-    }
   }
 </style>

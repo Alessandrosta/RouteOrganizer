@@ -35,7 +35,12 @@
       if (track) onadd(nearestIndex(track.points, e.latlng.lat, e.latlng.lng));
     });
     map = m;
-    return () => m.remove();
+    return () => {
+      // Stop any running zoom/pan animation first, or Leaflet errors after removal.
+      m.stop();
+      m.off();
+      m.remove();
+    };
   });
 
   // Base map tiles.
@@ -51,7 +56,7 @@
   // Fit the view when the route itself changes (not when splits move).
   $effect(() => {
     if (!map || !track) return;
-    map.fitBounds(L.latLngBounds(track.points.map((p) => [p.lat, p.lon])), { padding: [32, 32] });
+    map.fitBounds(L.latLngBounds(track.points.map((p) => [p.lat, p.lon])), { padding: [32, 32], animate: false });
   });
 
   // Stages alternate dark solid / lighter dashed so neighbours are easy to tell apart.

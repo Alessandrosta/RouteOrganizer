@@ -21,19 +21,37 @@
   import ElevationProfile from '../components/ElevationProfile.svelte';
   import StageRow from '../components/StageRow.svelte';
   import MarkdownPanel from '../components/MarkdownPanel.svelte';
+  import Sidebar from '../components/Sidebar.svelte';
+  import ContentPage from '../components/ContentPage.svelte';
+  import { findItem, loadNav, saveNav, type NavSection } from '../nav';
 
   interface Props {
     route: RouteEntry;
     versions: RouteVersion[];
     tracks: Record<string, Track>;
     versionId: string;
+    /** Open side-menu page, or null to show the map. */
+    itemId: string | null;
     onselect: (id: string) => void;
     onadd: (file: File) => void;
     /** Scrolling up past the top goes back to the landing page. */
     onscrollpast: () => void;
   }
 
-  let { route, versions, tracks, versionId, onselect, onadd, onscrollpast }: Props = $props();
+  let { route, versions, tracks, versionId, itemId, onselect, onadd, onscrollpast }: Props = $props();
+
+  // Side menu of this route (content/routes/<route>/nav.json, or the default list).
+  let nav = $state<NavSection[] | null>(null);
+  $effect(() => {
+    loadNav(route.id)
+      .then((sections) => (nav = sections))
+      .catch((e: Error) => (saveError = e.message));
+  });
+  function changeNav(sections: NavSection[]) {
+    nav = sections;
+    saveNav(route.id, sections, (e) => (saveError = e.message));
+  }
+  const openItem = $derived(nav && itemId ? findItem(nav, itemId) : null);
 
   let layer = $state<MapLayer>('CyclOSM');
   let plans = $state<Record<string, VersionPlan>>({});
@@ -129,18 +147,31 @@
 
 <div class="scroller" onwheel={wheel}>
   <header class="bar">
-    <a class="back" href="#/">
+    <a class="brand" href="#/r/{route.id}" title="Back to all routes">BincioPacking</a>
+    <span class="sep" aria-hidden="true"></span>
+    <h1>{route.name}</h1>
+    <span class="sub">{route.start} → {route.finish}</span>
+    <a class="back" href="#/r/{route.id}">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M8 13 V3 M4 7 L8 3 L12 7" />
       </svg>
-      Overview
+      All routes
     </a>
-    <h1>{route.name}</h1>
-    <span class="sub">{route.start} → {route.finish}</span>
   </header>
+
+  <div class="body">
+    <div class="sidebar">
+      {#if nav}
+        <Sidebar routeId={route.id} sections={nav} activeItemId={openItem ? itemId : null} onchange={changeNav} />
+      {/if}
+    </div>
 
   <main>
     {#if saveError}<p class="error" role="alert">{saveError}</p>{/if}
+
+    {#if openItem}
+      <ContentPage routeId={route.id} section={openItem.section} item={openItem.item} />
+    {:else}
 
     <section class="map-section" aria-label="Route map">
       <div class="map-head">
@@ -202,7 +233,9 @@
         {/if}
       </p>
     </section>
+    {/if}
   </main>
+  </div>
 </div>
 
 <style>
@@ -224,7 +257,24 @@
     background: var(--bg);
     border-bottom: 1px solid var(--border);
   }
+  .brand {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text-heading);
+    text-decoration: none;
+  }
+  .brand:hover {
+    color: var(--text-highlight);
+  }
+  .sep {
+    width: 1px;
+    height: 22px;
+    background: var(--border);
+  }
   .back {
+    margin-left: auto;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -243,7 +293,7 @@
   h1 {
     margin: 0;
     font-family: var(--font-display);
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--green-title);
   }
@@ -251,10 +301,24 @@
     font-size: 14px;
     color: var(--text-muted);
   }
-  main {
-    max-width: 1280px;
+  .body {
+    display: flex;
+    align-items: flex-start;
+    gap: 32px;
+    max-width: 1560px;
     margin: 0 auto;
     padding: 28px 44px 72px;
+  }
+  .sidebar {
+    position: sticky;
+    top: 92px;
+    flex: 0 0 260px;
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+  }
+  main {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -313,12 +377,25 @@
     margin: 0;
     color: var(--text-highlight);
   }
+  @media (max-width: 900px) {
+    .body {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 20px 16px 56px;
+    }
+    .sidebar {
+      position: static;
+      flex: none;
+      max-height: none;
+    }
+  }
   @media (max-width: 760px) {
     .bar {
       padding: 10px 16px;
     }
-    main {
-      padding: 20px 16px 56px;
+    .sep,
+    .sub {
+      display: none;
     }
   }
 </style>

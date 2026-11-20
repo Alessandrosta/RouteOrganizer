@@ -25,3 +25,5 @@ routes/
 ```
 
 To add a version, drop the file in `versions/` and add an entry to `versions`. The app picks up route folders automatically at build time; track files are loaded on demand.
+
+To add a route, create a new folder here with a `route.json` and its `versions/`. It shows up as a new slide on the home page, with the default side menu (Kit, Planning, Route, External links), which you can then edit in the app.

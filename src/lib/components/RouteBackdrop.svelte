@@ -62,11 +62,11 @@
       }
     const center: [number, number] = [(minLon + maxLon) / 2, (minLat + maxLat) / 2];
 
-    // Route fills the hero area: right of the sidebar on wide screens, below the header.
+    // Route fills the right-hand side on wide screens (info sits on the left), the lower part on phones.
     const wide = W > 760;
     const extent: [[number, number], [number, number]] = wide
-      ? [[Math.min(420, W * 0.3), 170], [W - 60, H - 90]]
-      : [[24, 270], [W - 24, H - 90]];
+      ? [[Math.max(W * 0.42, 500), 170], [W - 110, H - 120]]
+      : [[28, 380], [W - 28, H - 120]];
     // Globe radius on screen: large, but small enough that its edge stays in view.
     const radius = 0.62 * Math.max(W, H);
 
