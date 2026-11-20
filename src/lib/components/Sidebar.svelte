@@ -43,7 +43,8 @@
     flex: 1 1 260px;
     max-width: 300px;
     padding: 28px 16px 40px;
-    background: var(--bg-sidebar);
+    background: rgba(23, 30, 25, 0.45);
+    backdrop-filter: blur(1.5px);
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;

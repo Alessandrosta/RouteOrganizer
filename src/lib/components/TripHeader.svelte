@@ -67,5 +67,6 @@
     border-radius: 10px;
     padding: 10px 16px;
     min-width: 96px;
+    background: var(--bg-glass);
   }
 </style>

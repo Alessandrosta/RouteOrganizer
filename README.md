@@ -17,7 +17,7 @@ npm run build    # production build into dist/
 
 - `src/app.css` – design tokens (colors, fonts) as CSS custom properties, plus shared utility classes
 - `routes/` – one folder per route with its versions (`.tcx` / `.gpx`), see `routes/README.md`
-- `src/lib/routes/` – track parsing (TCX/GPX), route catalog loading, segment stats
+- `src/lib/routes/` – track parsing (TCX/GPX), route catalog loading, segment stats, and per-version plans (split points, segment names/notes, description — saved in the browser's localStorage)
 - `src/lib/map/layers.ts` – base map tile layers (CyclOSM, OpenTopoMap, Esri satellite)
 - `src/lib/data.ts` – sidebar navigation
 - `src/lib/components/` – UI components (`Sidebar`, `TripHeader`, `OverviewMap`, `DetailMap`, `LayerPicker`, `SplitForm`, `ElevationProfile`, `SegmentCard`, …)

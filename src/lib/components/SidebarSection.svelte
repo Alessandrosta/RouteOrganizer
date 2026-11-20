@@ -33,7 +33,7 @@
   .group {
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: var(--bg-card);
+    background: var(--bg-card-glass);
     overflow: hidden;
   }
   .toggle {

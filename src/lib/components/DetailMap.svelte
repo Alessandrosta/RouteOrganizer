@@ -8,12 +8,13 @@
 
   interface Props {
     track: Track | undefined;
-    splitIndex: number;
+    splits: number[];
     layer: MapLayer;
-    onsplit: (index: number) => void;
+    onadd: (index: number) => void;
+    onmove: (from: number, to: number) => void;
   }
 
-  let { track, splitIndex, layer, onsplit }: Props = $props();
+  let { track, splits, layer, onadd, onmove }: Props = $props();
 
   let container: HTMLDivElement;
   let map = $state<L.Map>();
@@ -31,7 +32,7 @@
     m.attributionControl.setPrefix(false);
     overlay.addTo(m);
     m.on('click', (e: L.LeafletMouseEvent) => {
-      if (track) onsplit(nearestIndex(track.points, e.latlng.lat, e.latlng.lng));
+      if (track) onadd(nearestIndex(track.points, e.latlng.lat, e.latlng.lng));
     });
     map = m;
     return () => m.remove();
@@ -47,34 +48,53 @@
     };
   });
 
-  // Fit the view when the route itself changes (not when the split moves).
+  // Fit the view when the route itself changes (not when splits move).
   $effect(() => {
     if (!map || !track) return;
     map.fitBounds(L.latLngBounds(track.points.map((p) => [p.lat, p.lon])), { padding: [32, 32] });
   });
 
-  // Route segments and markers.
+  // Segments alternate solid / dotted so neighbours are easy to tell apart.
   $effect(() => {
     if (!map || !track) return;
     const pts = track.points.map((p) => [p.lat, p.lon] as L.LatLngTuple);
-    const split = pts[splitIndex];
+    const bounds = [0, ...splits, pts.length - 1];
     overlay.clearLayers();
-    L.polyline(pts.slice(0, splitIndex + 1), { color: routeColors.segA, weight: 5, opacity: 0.95 }).addTo(overlay);
-    L.polyline(pts.slice(splitIndex), { color: routeColors.segB, weight: 5, opacity: 0.95, dashArray: '2 9' }).addTo(overlay);
+
+    bounds.slice(0, -1).forEach((start, i) => {
+      const even = i % 2 === 0;
+      L.polyline(pts.slice(start, bounds[i + 1] + 1), {
+        color: even ? routeColors.segA : routeColors.segB,
+        weight: 5,
+        opacity: 0.95,
+        dashArray: even ? undefined : '2 9',
+      }).addTo(overlay);
+    });
+
     L.circleMarker(pts[0], { radius: 7, color: routeColors.segA, weight: 3, fillColor: routeColors.ground, fillOpacity: 1 })
       .bindTooltip('Start')
       .addTo(overlay);
     L.circleMarker(pts[pts.length - 1], { radius: 7, color: routeColors.segB, fillColor: routeColors.segB, fillOpacity: 1 })
       .bindTooltip('Finish')
       .addTo(overlay);
-    L.circleMarker(split, { radius: 10, color: routeColors.split, weight: 3, fillColor: routeColors.ground, fillOpacity: 1 })
-      .bindTooltip('Split point', { permanent: true, direction: 'top', offset: [0, -10], className: 'split-tip' })
-      .addTo(overlay);
+
+    splits.forEach((index, n) => {
+      const marker = L.marker(pts[index], {
+        draggable: true,
+        keyboard: true,
+        title: `Split point ${n + 1} — drag to move`,
+        icon: L.divIcon({ className: 'split-pin', html: `<span>${n + 1}</span>`, iconSize: [28, 28] }),
+      }).addTo(overlay);
+      marker.on('dragend', () => {
+        const ll = marker.getLatLng();
+        onmove(index, nearestIndex(track!.points, ll.lat, ll.lng));
+      });
+    });
   });
 </script>
 
 <div class="detail">
-  <div class="map" bind:this={container} role="application" aria-label="Detailed route map. Click the route to set the split point."></div>
+  <div class="map" bind:this={container} role="application" aria-label="Detailed route map. Click the route to add a split point; drag a numbered point to move it."></div>
   <div class="zoom">
     <button aria-label="Zoom in" onclick={() => map?.zoomIn()}>+</button>
     <button aria-label="Zoom out" onclick={() => map?.zoomOut()}>−</button>
@@ -139,15 +159,16 @@
   .detail :global(.leaflet-control-attribution a) {
     color: var(--text);
   }
-  .detail :global(.split-tip) {
+  .detail :global(.split-pin) {
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
     background: var(--bg);
-    border: 1px solid var(--text-highlight);
+    border: 3px solid var(--text-highlight);
     color: var(--text-highlight);
-    font-weight: 600;
-    box-shadow: none;
-  }
-  .detail :global(.split-tip::before) {
-    border-top-color: var(--text-highlight);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: grab;
   }
   @media (max-width: 760px) {
     .map {
