@@ -1,0 +1,86 @@
+:root {
+  /* Surfaces */
+  --bg: #141a16;
+  --bg-sidebar: #171e19;
+  --bg-card: #1a221c;
+  --bg-map: #151c17;
+  --bg-map-detail: #18201b;
+  --bg-tabbar: #121813;
+
+  /* Lines */
+  --border: #4a6324;
+  --border-subtle: #2c3a20;
+  --ghost: #33461f;
+  --map-border-line: #2c3b22;
+  --map-contour: #212b1c;
+  --profile-fill: #253318;
+
+  /* Text */
+  --text: #7fa32e;
+  --text-heading: #8fb33a;
+  --text-muted: #80964f;
+  --text-highlight: #b5d46a;
+
+  /* Accents */
+  --accent: #6b8e23;
+  --accent-alt: #a9c96a;
+  --hover-bg: #1f2a1c;
+
+  --font-body: Inter, system-ui, sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+a {
+  color: var(--text);
+}
+a:hover {
+  color: var(--text-highlight);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+/* Shared small-caps label used across stat blocks and form fields */
+.eyebrow {
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-heading);
+}
