@@ -37,11 +37,11 @@
     cursor: pointer;
   }
   .pill:hover {
-    border-color: var(--accent);
+    border-color: var(--text-muted);
   }
   .pill.on {
     background: var(--accent);
     border-color: var(--accent);
-    color: var(--bg);
+    color: var(--accent-contrast);
   }
 </style>

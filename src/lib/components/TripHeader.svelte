@@ -51,7 +51,7 @@
     font-size: 44px;
     font-weight: 700;
     line-height: 1.05;
-    color: var(--text-heading);
+    color: var(--green-title);
   }
   .subtitle {
     font-size: 15px;

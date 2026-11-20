@@ -1,34 +1,32 @@
 :root {
-  /* Surfaces */
-  --bg: #141a16;
-  --bg-sidebar: #171e19;
-  --bg-card: #1a221c;
-  --bg-map: #151c17;
-  --bg-map-detail: #18201b;
-  --bg-tabbar: #121813;
-  /* Behind the globe backdrop, and translucent panels that let it show through */
-  --bg-space: #0e1210;
-  --bg-glass: rgba(20, 26, 22, 0.72);
-  --bg-card-glass: rgba(26, 34, 28, 0.92);
+  /* Greys */
+  --bg-space: #0b0b0b;
+  --bg: #121212;
+  --bg-card: #1a1a1a;
+  --bg-map-detail: #161616;
+  --bg-glass: rgba(18, 18, 18, 0.74);
+  --bg-card-glass: rgba(24, 24, 24, 0.92);
+  --hover-bg: #242424;
 
-  /* Lines */
-  --border: #4a6324;
-  --border-subtle: #2c3a20;
-  --ghost: #33461f;
-  --map-border-line: #2c3b22;
-  --map-contour: #212b1c;
-  --profile-fill: #253318;
+  --border: #3a3a3a;
+  --border-subtle: #262626;
+  --profile-fill: #2a2a2a;
 
-  /* Text */
-  --text: #7fa32e;
-  --text-heading: #8fb33a;
-  --text-muted: #80964f;
-  --text-highlight: #b5d46a;
+  --text: #d6d6d6;
+  --text-heading: #f2f2f2;
+  --text-muted: #9c9c9c;
+  --text-highlight: #ffffff;
 
-  /* Accents */
-  --accent: #6b8e23;
-  --accent-alt: #a9c96a;
-  --hover-bg: #1f2a1c;
+  /* UI accent (buttons, selected states) stays in the grey scale */
+  --accent: #e4e4e4;
+  --accent-contrast: #121212;
+  --accent-alt: #8c8c8c;
+
+  /* Green is reserved for the route title and the sketched map */
+  --green: #6b8e23;
+  --green-title: #8fb33a;
+  --sketch-border: #2d2d2d;
+  --sketch-grid: #1d1d1d;
 
   --font-body: Inter, system-ui, sans-serif;
   --font-display: 'Space Grotesk', sans-serif;
@@ -40,10 +38,6 @@
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
   margin: 0;
   background: var(--bg-space);
@@ -52,7 +46,7 @@ body {
 }
 
 a {
-  color: var(--text);
+  color: var(--text-heading);
 }
 a:hover {
   color: var(--text-highlight);
@@ -62,6 +56,11 @@ button,
 input,
 textarea {
   font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--text-highlight);
+  outline-offset: 2px;
 }
 
 /* Shared small-caps label used across stat blocks and form fields */
@@ -75,6 +74,7 @@ textarea {
 .stat-value {
   font-family: var(--font-display);
   font-weight: 600;
+  color: var(--text-heading);
 }
 
 .card {
@@ -88,4 +88,13 @@ textarea {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-heading);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

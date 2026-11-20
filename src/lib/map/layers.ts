@@ -31,8 +31,9 @@ export const mapLayerNames = Object.keys(mapLayers) as MapLayer[];
 
 /** Leaflet sets these as SVG attributes, so CSS variables can't be used. Keep in sync with app.css. */
 export const routeColors = {
-  segA: '#6b8e23',
-  segB: '#a9c96a',
-  split: '#b5d46a',
-  ground: '#18201b',
+  /** Stages alternate between these two, each drawn over a white casing so they read on any base map. */
+  stageA: '#1f1f1f',
+  stageB: '#5c5c5c',
+  casing: '#ffffff',
+  ground: '#121212',
 };

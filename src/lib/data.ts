@@ -1,7 +1,7 @@
 export interface NavItem {
   label: string;
-  meta: string;
-  href: string;
+  /** Page slug; its markdown lives at content/pages/<section>/<slug>.md */
+  slug: string;
 }
 
 export interface NavSection {
@@ -15,48 +15,44 @@ export interface Stat {
   value: string;
 }
 
+const item = (label: string): NavItem => ({
+  label,
+  slug: label
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, ''),
+});
+
 export const navSections: NavSection[] = [
   {
     id: 'kit',
     title: 'Kit',
-    items: [
-      { label: 'Kit list', meta: 'Spreadsheet ↗', href: '#' },
-      { label: 'Sleep system', meta: '', href: '#' },
-      { label: 'Bags & packing', meta: '', href: '#' },
-      { label: 'Tools & spares', meta: '', href: '#' },
-      { label: 'Clothing', meta: '', href: '#' },
-    ],
+    items: ['Kit list', 'Sleep system', 'Bags & packing', 'Tools & spares', 'Clothing'].map(item),
   },
   {
     id: 'planning',
     title: 'Planning',
-    items: [
-      { label: 'Dates & stages', meta: '', href: '#' },
-      { label: 'Accommodation', meta: '', href: '#' },
-      { label: 'Resupply & water', meta: '', href: '#' },
-      { label: 'Transport & tickets', meta: '', href: '#' },
-      { label: 'Budget', meta: '', href: '#' },
-    ],
+    items: ['Dates & stages', 'Accommodation', 'Resupply & water', 'Transport & tickets', 'Budget'].map(item),
   },
   {
     id: 'route',
     title: 'Route',
-    items: [
-      { label: 'Detailed map', meta: '', href: '#detail-map' },
-      { label: 'Split at a point', meta: '', href: '#detail-map' },
-      { label: 'Elevation profile', meta: '', href: '#detail-map' },
-      { label: 'Download GPX', meta: '.gpx', href: '#' },
-    ],
+    items: ['Route notes', 'Bail-out options', 'Points of interest', 'Navigation & GPS'].map(item),
   },
   {
     id: 'links',
     title: 'External links',
-    items: [
-      { label: 'Guides', meta: '↗', href: '#' },
-      { label: 'Must-have products', meta: '↗', href: '#' },
-      { label: 'Kit spreadsheet', meta: '↗', href: '#' },
-      { label: 'Tickets', meta: '↗', href: '#' },
-    ],
+    items: ['Guides', 'Must-have products', 'Kit spreadsheet', 'Tickets'].map(item),
   },
 ];
 
+export function pagePath(sectionId: string, slug: string) {
+  return `pages/${sectionId}/${slug}.md`;
+}
+
+export function findPage(sectionId: string, slug: string) {
+  const section = navSections.find((s) => s.id === sectionId);
+  const page = section?.items.find((i) => i.slug === slug);
+  return section && page ? { section, page } : null;
+}

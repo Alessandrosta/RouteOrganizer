@@ -6,13 +6,13 @@
   import { sample } from '../routes/stats';
 
   interface Props {
-    tracks: { id: string; track: Track }[];
-    selectedId: string;
+    /** The route drawn on the globe (the first version). */
+    track: Track | undefined;
     startLabel: string;
     finishLabel: string;
   }
 
-  let { tracks, selectedId, startLabel, finishLabel }: Props = $props();
+  let { track, startLabel, finishLabel }: Props = $props();
 
   let W = $state(1440);
   let H = $state(900);
@@ -39,13 +39,16 @@
   }
 
   const lines = $derived(
-    tracks.map(({ id, track }) => ({
-      id,
-      geo: {
-        type: 'LineString',
-        coordinates: sample(track.points, 1000).map((p) => [p.lon, p.lat]),
-      } as GeoJSON.LineString,
-    })),
+    track
+      ? [
+          {
+            geo: {
+              type: 'LineString',
+              coordinates: sample(track.points, 1000).map((p) => [p.lon, p.lat]),
+            } as GeoJSON.LineString,
+          },
+        ]
+      : [],
   );
 
   const view = $derived.by(() => {
@@ -62,8 +65,8 @@
     // Route fills the hero area: right of the sidebar on wide screens, below the header.
     const wide = W > 760;
     const extent: [[number, number], [number, number]] = wide
-      ? [[Math.min(420, W * 0.3), 210], [W - 60, H - 50]]
-      : [[24, 260], [W - 24, H - 40]];
+      ? [[Math.min(420, W * 0.3), 170], [W - 60, H - 90]]
+      : [[24, 270], [W - 24, H - 90]];
     // Globe radius on screen: large, but small enough that its edge stays in view.
     const radius = 0.62 * Math.max(W, H);
 
@@ -83,8 +86,7 @@
     return { projection, path, graticule };
   });
 
-  const current = $derived(lines.find((l) => l.id === selectedId));
-  const ghosts = $derived(lines.filter((l) => l.id !== selectedId));
+  const current = $derived(lines[0]);
   const ends = $derived.by(() => {
     if (!current || !view) return null;
     const c = current.geo.coordinates;
@@ -100,24 +102,21 @@
   <svg width={W} height={H} viewBox="0 0 {W} {H}">
     <defs>
       <radialGradient id="globe-shade" cx="42%" cy="38%" r="65%">
-        <stop offset="0%" stop-color="#1d271f" />
-        <stop offset="70%" stop-color="#161d18" />
-        <stop offset="100%" stop-color="#111612" />
+        <stop offset="0%" stop-color="#1e1e1e" />
+        <stop offset="70%" stop-color="#151515" />
+        <stop offset="100%" stop-color="#101010" />
       </radialGradient>
     </defs>
     {#if view}
       <path d={view.path({ type: 'Sphere' })} fill="url(#globe-shade)" stroke="var(--border-subtle)" stroke-width="1.5" />
-      <path d={view.path(view.graticule)} fill="none" stroke="var(--map-contour)" stroke-width="1" />
+      <path d={view.path(view.graticule)} fill="none" stroke="var(--sketch-grid)" stroke-width="1" />
       {#if borders}
-        <path d={view.path(borders)} fill="none" stroke="var(--map-border-line)" stroke-width="1.3" stroke-linejoin="round" />
+        <path d={view.path(borders)} fill="none" stroke="var(--sketch-border)" stroke-width="1.3" stroke-linejoin="round" />
       {/if}
-      {#each ghosts as g (g.id)}
-        <path d={view.path(g.geo)} fill="none" stroke="var(--ghost)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 7" />
-      {/each}
       {#if current && ends}
-        <path d={view.path(current.geo)} fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
-        <circle cx={ends.sx} cy={ends.sy} r="10" fill="var(--bg)" stroke="var(--accent)" stroke-width="3.5" />
-        <circle cx={ends.fx} cy={ends.fy} r="10" fill="var(--accent)" />
+        <path d={view.path(current.geo)} fill="none" stroke="var(--green)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx={ends.sx} cy={ends.sy} r="10" fill="var(--bg)" stroke="var(--green)" stroke-width="3.5" />
+        <circle cx={ends.fx} cy={ends.fy} r="10" fill="var(--green)" />
         <text x={ends.sx + 20} y={ends.sy + 6} fill="var(--text-muted)" font-size="17" font-family="Inter, sans-serif">{startLabel}</text>
         <text x={ends.fx + 20} y={ends.fy + 6} fill="var(--text-muted)" font-size="17" font-family="Inter, sans-serif">{finishLabel}</text>
       {/if}
@@ -127,7 +126,7 @@
 
 <style>
   .backdrop {
-    position: fixed;
+    position: absolute;
     inset: 0;
     z-index: 0;
     pointer-events: none;

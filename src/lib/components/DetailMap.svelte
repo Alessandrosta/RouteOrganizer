@@ -54,7 +54,7 @@
     map.fitBounds(L.latLngBounds(track.points.map((p) => [p.lat, p.lon])), { padding: [32, 32] });
   });
 
-  // Segments alternate solid / dotted so neighbours are easy to tell apart.
+  // Stages alternate dark solid / lighter dashed so neighbours are easy to tell apart.
   $effect(() => {
     if (!map || !track) return;
     const pts = track.points.map((p) => [p.lat, p.lon] as L.LatLngTuple);
@@ -62,19 +62,20 @@
     overlay.clearLayers();
 
     bounds.slice(0, -1).forEach((start, i) => {
+      const line = pts.slice(start, bounds[i + 1] + 1);
       const even = i % 2 === 0;
-      L.polyline(pts.slice(start, bounds[i + 1] + 1), {
-        color: even ? routeColors.segA : routeColors.segB,
+      L.polyline(line, { color: routeColors.casing, weight: 9, opacity: 0.9, interactive: false }).addTo(overlay);
+      L.polyline(line, {
+        color: even ? routeColors.stageA : routeColors.stageB,
         weight: 5,
-        opacity: 0.95,
-        dashArray: even ? undefined : '2 9',
+        dashArray: even ? undefined : '8 6',
       }).addTo(overlay);
     });
 
-    L.circleMarker(pts[0], { radius: 7, color: routeColors.segA, weight: 3, fillColor: routeColors.ground, fillOpacity: 1 })
+    L.circleMarker(pts[0], { radius: 7, color: routeColors.stageA, weight: 3, fillColor: routeColors.casing, fillOpacity: 1 })
       .bindTooltip('Start')
       .addTo(overlay);
-    L.circleMarker(pts[pts.length - 1], { radius: 7, color: routeColors.segB, fillColor: routeColors.segB, fillOpacity: 1 })
+    L.circleMarker(pts[pts.length - 1], { radius: 7, color: routeColors.casing, weight: 2, fillColor: routeColors.stageA, fillOpacity: 1 })
       .bindTooltip('Finish')
       .addTo(overlay);
 
@@ -94,7 +95,7 @@
 </script>
 
 <div class="detail">
-  <div class="map" bind:this={container} role="application" aria-label="Detailed route map. Click the route to add a split point; drag a numbered point to move it."></div>
+  <div class="map" bind:this={container} role="application" aria-label="Detailed route map. Click the route to add a split point between stages; drag a numbered point to move it."></div>
   <div class="zoom">
     <button aria-label="Zoom in" onclick={() => map?.zoomIn()}>+</button>
     <button aria-label="Zoom out" onclick={() => map?.zoomOut()}>−</button>
@@ -134,7 +135,7 @@
     cursor: pointer;
   }
   .zoom button:hover {
-    border-color: var(--accent);
+    border-color: var(--text-muted);
   }
   .layer-badge {
     position: absolute;
@@ -153,7 +154,7 @@
     font-family: var(--font-body);
   }
   .detail :global(.leaflet-control-attribution) {
-    background: rgba(20, 26, 22, 0.8);
+    background: rgba(18, 18, 18, 0.8);
     color: var(--text-muted);
   }
   .detail :global(.leaflet-control-attribution a) {
@@ -163,9 +164,9 @@
     display: grid;
     place-items: center;
     border-radius: 50%;
-    background: var(--bg);
-    border: 3px solid var(--text-highlight);
-    color: var(--text-highlight);
+    background: #1f1f1f;
+    border: 3px solid #ffffff;
+    color: #ffffff;
     font-size: 13px;
     font-weight: 700;
     cursor: grab;

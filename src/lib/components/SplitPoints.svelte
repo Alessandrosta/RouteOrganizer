@@ -119,7 +119,7 @@
     border-radius: 8px;
     border: none;
     background: var(--accent);
-    color: var(--bg);
+    color: var(--accent-contrast);
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
