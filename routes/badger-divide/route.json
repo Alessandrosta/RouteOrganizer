@@ -1,0 +1,8 @@
+{
+  "name": "The Badger Divide",
+  "start": "Inverness",
+  "finish": "Glasgow",
+  "versions": [
+    { "id": "v1", "label": "Version 1", "note": "original", "file": "v1.tcx" }
+  ]
+}

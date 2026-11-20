@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { MapLayer } from '../data';
+  import type { MapLayer } from '../map/layers';
 
   interface Props {
     layers: readonly MapLayer[];

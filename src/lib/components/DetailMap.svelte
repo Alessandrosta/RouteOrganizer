@@ -1,37 +1,83 @@
 <script lang="ts">
-  import type { MapLayer, RouteVersion } from '../data';
+  import { onMount } from 'svelte';
+  import L from 'leaflet';
+  import 'leaflet/dist/leaflet.css';
+  import type { Track } from '../routes/types';
+  import { nearestIndex } from '../routes/stats';
+  import { mapLayers, routeColors, type MapLayer } from '../map/layers';
 
   interface Props {
-    route: RouteVersion;
+    track: Track | undefined;
+    splitIndex: number;
     layer: MapLayer;
+    onsplit: (index: number) => void;
   }
 
-  let { route, layer }: Props = $props();
+  let { track, splitIndex, layer, onsplit }: Props = $props();
+
+  let container: HTMLDivElement;
+  let map = $state<L.Map>();
+  const overlay = L.layerGroup();
+
+  onMount(() => {
+    const m = L.map(container, {
+      zoomControl: false,
+      scrollWheelZoom: false,
+      zoomSnap: 0.25,
+      zoomDelta: 1,
+      center: [56.5, -4],
+      zoom: 7,
+    });
+    m.attributionControl.setPrefix(false);
+    overlay.addTo(m);
+    m.on('click', (e: L.LeafletMouseEvent) => {
+      if (track) onsplit(nearestIndex(track.points, e.latlng.lat, e.latlng.lng));
+    });
+    map = m;
+    return () => m.remove();
+  });
+
+  // Base map tiles.
+  $effect(() => {
+    if (!map) return;
+    const { url, options } = mapLayers[layer];
+    const tiles = L.tileLayer(url, options).addTo(map);
+    return () => {
+      tiles.remove();
+    };
+  });
+
+  // Fit the view when the route itself changes (not when the split moves).
+  $effect(() => {
+    if (!map || !track) return;
+    map.fitBounds(L.latLngBounds(track.points.map((p) => [p.lat, p.lon])), { padding: [32, 32] });
+  });
+
+  // Route segments and markers.
+  $effect(() => {
+    if (!map || !track) return;
+    const pts = track.points.map((p) => [p.lat, p.lon] as L.LatLngTuple);
+    const split = pts[splitIndex];
+    overlay.clearLayers();
+    L.polyline(pts.slice(0, splitIndex + 1), { color: routeColors.segA, weight: 5, opacity: 0.95 }).addTo(overlay);
+    L.polyline(pts.slice(splitIndex), { color: routeColors.segB, weight: 5, opacity: 0.95, dashArray: '2 9' }).addTo(overlay);
+    L.circleMarker(pts[0], { radius: 7, color: routeColors.segA, weight: 3, fillColor: routeColors.ground, fillOpacity: 1 })
+      .bindTooltip('Start')
+      .addTo(overlay);
+    L.circleMarker(pts[pts.length - 1], { radius: 7, color: routeColors.segB, fillColor: routeColors.segB, fillOpacity: 1 })
+      .bindTooltip('Finish')
+      .addTo(overlay);
+    L.circleMarker(split, { radius: 10, color: routeColors.split, weight: 3, fillColor: routeColors.ground, fillOpacity: 1 })
+      .bindTooltip('Split point', { permanent: true, direction: 'top', offset: [0, -10], className: 'split-tip' })
+      .addTo(overlay);
+  });
 </script>
 
 <div class="detail">
-  <svg viewBox="0 0 1000 480" role="img" aria-label="Detailed map placeholder showing the route split into two segments">
-    <g fill="none" stroke="var(--map-contour)" stroke-width="1">
-      <path d="M0,80 C160,40 320,120 480,70 S800,30 1000,90" />
-      <path d="M0,140 C180,100 300,180 500,130 S820,90 1000,160" />
-      <path d="M0,370 C200,330 340,410 520,360 S820,320 1000,380" />
-      <path d="M0,430 C220,400 360,470 540,420 S840,390 1000,440" />
-      <path d="M380,200 C420,170 470,180 490,210 S470,270 420,260 S350,230 380,200" />
-      <path d="M650,320 C700,290 760,300 770,340 S730,390 680,380 S620,350 650,320" />
-    </g>
-    <path d={route.segA} fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
-    <path d={route.segB} fill="none" stroke="var(--accent-alt)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 9" />
-    <circle cx="110" cy="300" r="8" fill="var(--bg-map-detail)" stroke="var(--accent)" stroke-width="3" />
-    <circle cx="920" cy="250" r="8" fill="var(--accent-alt)" />
-    <circle cx={route.sx} cy={route.sy} r="11" fill="var(--bg-map-detail)" stroke="var(--text-highlight)" stroke-width="3" />
-    <circle cx={route.sx} cy={route.sy} r="4" fill="var(--text-highlight)" />
-    <text x={route.sx} y={route.sy - 26} text-anchor="middle" fill="var(--text-highlight)" font-size="15" font-weight="600" font-family="Inter, sans-serif">Split point</text>
-    <text x={route.ax} y={route.ay} text-anchor="middle" fill="var(--text)" font-size="14" font-family="Inter, sans-serif">Segment A</text>
-    <text x={route.bx} y={route.by} text-anchor="middle" fill="var(--accent-alt)" font-size="14" font-family="Inter, sans-serif">Segment B</text>
-  </svg>
+  <div class="map" bind:this={container} role="application" aria-label="Detailed route map. Click the route to set the split point."></div>
   <div class="zoom">
-    <button aria-label="Zoom in">+</button>
-    <button aria-label="Zoom out">−</button>
+    <button aria-label="Zoom in" onclick={() => map?.zoomIn()}>+</button>
+    <button aria-label="Zoom out" onclick={() => map?.zoomOut()}>−</button>
   </div>
   <div class="layer-badge">Live map: {layer} tiles</div>
 </div>
@@ -44,15 +90,15 @@
     overflow: hidden;
     background: var(--bg-map-detail);
   }
-  svg {
-    display: block;
-    width: 100%;
-    height: auto;
+  .map {
+    height: 560px;
+    background: var(--bg-map-detail);
   }
   .zoom {
     position: absolute;
     top: 14px;
     right: 14px;
+    z-index: 1000;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -67,15 +113,45 @@
     font-size: 20px;
     cursor: pointer;
   }
+  .zoom button:hover {
+    border-color: var(--accent);
+  }
   .layer-badge {
     position: absolute;
     left: 14px;
     bottom: 14px;
+    z-index: 1000;
     padding: 6px 10px;
     border-radius: 6px;
     background: var(--bg);
     border: 1px solid var(--border-subtle);
     font-size: 12px;
     color: var(--text-muted);
+    pointer-events: none;
+  }
+  .detail :global(.leaflet-container) {
+    font-family: var(--font-body);
+  }
+  .detail :global(.leaflet-control-attribution) {
+    background: rgba(20, 26, 22, 0.8);
+    color: var(--text-muted);
+  }
+  .detail :global(.leaflet-control-attribution a) {
+    color: var(--text);
+  }
+  .detail :global(.split-tip) {
+    background: var(--bg);
+    border: 1px solid var(--text-highlight);
+    color: var(--text-highlight);
+    font-weight: 600;
+    box-shadow: none;
+  }
+  .detail :global(.split-tip::before) {
+    border-top-color: var(--text-highlight);
+  }
+  @media (max-width: 760px) {
+    .map {
+      height: 420px;
+    }
   }
 </style>

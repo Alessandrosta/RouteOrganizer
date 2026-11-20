@@ -1,55 +1,104 @@
 <script lang="ts">
-  import type { RouteVersion } from '../data';
+  import { geoMercator, geoPath } from 'd3-geo';
+  import { mesh } from 'topojson-client';
+  import type { Topology, GeometryCollection } from 'topojson-specification';
+  import type { RouteVersion, Track } from '../routes/types';
+  import { sample } from '../routes/stats';
 
   interface Props {
     versions: RouteVersion[];
+    tracks: Record<string, Track | undefined>;
     selectedId: string;
+    startLabel: string;
+    finishLabel: string;
     onselect: (id: string) => void;
+    onadd: (file: File) => void;
   }
 
-  let { versions, selectedId, onselect }: Props = $props();
+  let { versions, tracks, selectedId, startLabel, finishLabel, onselect, onadd }: Props = $props();
 
-  let current = $derived(versions.find((v) => v.id === selectedId) ?? versions[0]);
-  let ghosts = $derived(versions.filter((v) => v.id !== current.id));
+  const W = 1000;
+  const H = 540;
+  const PAD = 48;
+
+  // Country borders + coastlines from Natural Earth (1:50m), loaded once as a lazy chunk.
+  let borders = $state<GeoJSON.MultiLineString | null>(null);
+  import('world-atlas/countries-50m.json').then((m) => {
+    const topo = m.default as unknown as Topology<{ countries: GeometryCollection }>;
+    borders = mesh(topo, topo.objects.countries);
+  });
+
+  let fileInput: HTMLInputElement;
+
+  const lines = $derived(
+    versions.flatMap((v) => {
+      const t = tracks[v.id];
+      if (!t) return [];
+      const coords = sample(t.points, 800).map((p) => [p.lon, p.lat]);
+      return [{ id: v.id, geo: { type: 'LineString', coordinates: coords } as GeoJSON.LineString }];
+    }),
+  );
+
+  const projection = $derived.by(() => {
+    const all: GeoJSON.MultiLineString = { type: 'MultiLineString', coordinates: lines.map((l) => l.geo.coordinates) };
+    const p = geoMercator().clipExtent([[0, 0], [W, H]]);
+    return lines.length ? p.fitExtent([[PAD, PAD], [W - PAD, H - PAD]], all) : p;
+  });
+  const path = $derived(geoPath(projection));
+  const bordersPath = $derived(borders && lines.length ? path(borders) : null);
+
+  const current = $derived(lines.find((l) => l.id === selectedId));
+  const ghosts = $derived(lines.filter((l) => l.id !== selectedId));
+  const ends = $derived.by(() => {
+    if (!current) return null;
+    const c = current.geo.coordinates;
+    const [sx, sy] = projection(c[0] as [number, number]) ?? [0, 0];
+    const [fx, fy] = projection(c[c.length - 1] as [number, number]) ?? [0, 0];
+    return { sx, sy, fx, fy };
+  });
+
+  function pick(event: Event) {
+    const file = (event.currentTarget as HTMLInputElement).files?.[0];
+    if (file) onadd(file);
+    (event.currentTarget as HTMLInputElement).value = '';
+  }
 </script>
 
 <div class="mapwrap">
   <div class="tabbar" role="tablist" aria-label="Route versions">
     {#each versions as v (v.id)}
-      {@const on = v.id === current.id}
+      {@const on = v.id === selectedId}
       <button class="vtab" class:on role="tab" aria-selected={on} onclick={() => onselect(v.id)}>
         <span class="swatch"></span>
         <span>{v.label}</span>
         <span class="note">{v.note}</span>
       </button>
     {/each}
-    <button class="vtab add" aria-label="Add route version">
+    <button class="vtab add" aria-label="Add route version from a GPX or TCX file" onclick={() => fileInput.click()}>
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
         <path d="M9 3 V15 M3 9 H15" />
       </svg>
     </button>
+    <input bind:this={fileInput} type="file" accept=".gpx,.tcx" hidden onchange={pick} />
   </div>
 
   <a class="maplink" href="#detail-map" aria-label="Open the detailed route map">
-    <svg viewBox="0 0 1000 540" role="img" aria-label="Simplified map with country borders and the selected route version">
-      <g fill="none" stroke="var(--map-border-line)" stroke-width="1.2" stroke-linecap="round">
-        <path d="M30,110 C140,92 220,146 300,124 S460,84 520,134 S640,196 700,164 S860,112 970,140" />
-        <path d="M300,124 C312,196 278,258 320,328 S298,448 340,530" />
-        <path d="M520,134 C542,214 500,276 560,336 S602,436 580,530" />
-        <path d="M700,164 C688,236 742,298 720,376 S762,476 800,530" />
-        <path d="M30,376 C120,356 200,398 320,328" />
-        <path d="M560,336 C622,326 662,358 720,376 S880,356 970,396" />
-        <path d="M120,20 C130,60 110,90 140,104" />
-        <path d="M840,20 C830,70 870,100 860,128" />
-      </g>
+    <svg viewBox="0 0 {W} {H}" role="img" aria-label="Simplified map with country borders and the selected route version">
+      {#if bordersPath}
+        <path d={bordersPath} fill="none" stroke="var(--map-border-line)" stroke-width="1.2" stroke-linejoin="round" />
+      {/if}
       {#each ghosts as g (g.id)}
-        <path d={g.full} fill="none" stroke="var(--ghost)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 6" />
+        <path d={path(g.geo)} fill="none" stroke="var(--ghost)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 6" />
       {/each}
-      <path d={current.full} fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
-      <circle cx="110" cy="300" r="9" fill="var(--bg)" stroke="var(--accent)" stroke-width="3" />
-      <circle cx="920" cy="250" r="9" fill="var(--accent)" />
-      <text x="110" y="336" text-anchor="middle" fill="var(--text-muted)" font-size="15" font-family="Inter, sans-serif">[Start]</text>
-      <text x="920" y="226" text-anchor="middle" fill="var(--text-muted)" font-size="15" font-family="Inter, sans-serif">[Finish]</text>
+      {#if current && ends}
+        <path d={path(current.geo)} fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx={ends.sx} cy={ends.sy} r="9" fill="var(--bg)" stroke="var(--accent)" stroke-width="3" />
+        <circle cx={ends.fx} cy={ends.fy} r="9" fill="var(--accent)" />
+        <text x={ends.sx + 18} y={ends.sy + 5} fill="var(--text-muted)" font-size="15" font-family="Inter, sans-serif">{startLabel}</text>
+        <text x={ends.fx + 18} y={ends.fy + 5} fill="var(--text-muted)" font-size="15" font-family="Inter, sans-serif">{finishLabel}</text>
+      {:else}
+        <text x={W / 2} y={H / 2} text-anchor="middle" fill="var(--text-muted)" font-size="16" font-family="Inter, sans-serif">Loading route…</text>
+      {/if}
     </svg>
     <div class="hint">
       <span>Click the map for the detailed view</span>

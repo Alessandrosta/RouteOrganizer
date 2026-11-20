@@ -6,9 +6,10 @@
   interface Props {
     sections: NavSection[];
     initiallyOpen?: string[];
+    footer?: string;
   }
 
-  let { sections, initiallyOpen = ['kit'] }: Props = $props();
+  let { sections, initiallyOpen = ['kit'], footer = '' }: Props = $props();
 
   // Seeded once from `initiallyOpen`; afterwards the sidebar owns its open state.
   let open = $state<Record<string, boolean>>(
@@ -34,7 +35,7 @@
     />
   {/each}
 
-  <div class="footer">Route data: [your-route.gpx]</div>
+  {#if footer}<div class="footer">{footer}</div>{/if}
 </aside>
 
 <style>

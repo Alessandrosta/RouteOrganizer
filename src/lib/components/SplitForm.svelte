@@ -1,31 +1,48 @@
 <script lang="ts">
   interface Props {
-    onsplit?: (lat: string, lon: string) => void;
+    lat: number;
+    lon: number;
+    onsplit: (lat: number, lon: number) => void;
   }
 
-  let { onsplit }: Props = $props();
+  let { lat, lon, onsplit }: Props = $props();
 
-  let lat = $state('');
-  let lon = $state('');
+  let latText = $state('');
+  let lonText = $state('');
+  let error = $state('');
+
+  // Show the current split point whenever it moves (map click, profile click, version change).
+  $effect(() => {
+    latText = lat.toFixed(5);
+    lonText = lon.toFixed(5);
+    error = '';
+  });
 
   function submit(event: SubmitEvent) {
     event.preventDefault();
-    onsplit?.(lat, lon);
+    const la = Number(latText);
+    const lo = Number(lonText);
+    if (!latText || !lonText || !Number.isFinite(la) || !Number.isFinite(lo) || Math.abs(la) > 90 || Math.abs(lo) > 180) {
+      error = 'Enter a valid latitude and longitude.';
+      return;
+    }
+    onsplit(la, lo);
   }
 </script>
 
 <form class="card split" onsubmit={submit}>
   <div class="intro">
     <span class="card-title">Split the route</span>
-    <span class="hint">Click the map or enter a coordinate</span>
+    <span class="hint">Click the map or the elevation profile, or enter a coordinate. The split snaps to the nearest point on the route.</span>
+    {#if error}<span class="error" role="alert">{error}</span>{/if}
   </div>
   <label class="eyebrow">
     Latitude
-    <input type="text" inputmode="decimal" placeholder="45.0000" bind:value={lat} />
+    <input type="text" inputmode="decimal" placeholder="56.50000" bind:value={latText} />
   </label>
   <label class="eyebrow">
     Longitude
-    <input type="text" inputmode="decimal" placeholder="10.0000" bind:value={lon} />
+    <input type="text" inputmode="decimal" placeholder="-4.00000" bind:value={lonText} />
   </label>
   <button type="submit">Split route</button>
 </form>
@@ -47,6 +64,9 @@
   }
   .hint {
     color: var(--text-muted);
+  }
+  .error {
+    color: var(--text-highlight);
   }
   label {
     display: flex;
