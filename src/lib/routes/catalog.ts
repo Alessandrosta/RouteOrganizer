@@ -13,7 +13,8 @@ const trackFiles = import.meta.glob<string>('/routes/*/versions/*.{tcx,gpx}', {
 
 export const routes: RouteEntry[] = Object.entries(manifests)
   .map(([path, manifest]) => ({ id: path.split('/')[2], ...manifest }))
-  .sort((a, b) => a.name.localeCompare(b.name));
+  // Oldest first, so newly added routes appear at the end of the carousel.
+  .sort((a, b) => (a.created ?? '').localeCompare(b.created ?? '') || a.name.localeCompare(b.name));
 
 export function routeVersions(route: RouteEntry): RouteVersion[] {
   return route.versions.map((v) => ({

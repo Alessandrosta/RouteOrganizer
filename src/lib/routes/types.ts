@@ -24,6 +24,8 @@ export interface RouteManifest {
   name: string;
   start: string;
   finish: string;
+  /** When the route was added (ISO date); orders the home carousel. */
+  created?: string;
   versions: VersionManifest[];
 }
 

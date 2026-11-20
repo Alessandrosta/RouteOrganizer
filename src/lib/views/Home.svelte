@@ -11,9 +11,11 @@
     onindex: (index: number) => void;
     /** Open the route's map page (scroll / swipe down). */
     onopen: () => void;
+    /** Add a new route (the right-hand button on the last slide). */
+    onadd: () => void;
   }
 
-  let { routes, tracks, index, onindex, onopen }: Props = $props();
+  let { routes, tracks, index, onindex, onopen, onadd }: Props = $props();
 
   const count = $derived(routes.length);
   const prev = () => index > 0 && onindex(index - 1);
@@ -109,12 +111,17 @@
     <p>Bikepacking routes</p>
   </header>
 
-  {#if count > 1}
-    <button class="arrow left" aria-label="Previous route" disabled={index === 0} onclick={prev}>
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4 L7 11 L14 18" /></svg>
-    </button>
-    <button class="arrow right" aria-label="Next route" disabled={index === count - 1} onclick={next}>
+  <button class="arrow left" aria-label="Previous route" disabled={index === 0} onclick={prev}>
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4 L7 11 L14 18" /></svg>
+  </button>
+  {#if index < count - 1}
+    <button class="arrow right" aria-label="Next route" onclick={next}>
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4 L15 11 L8 18" /></svg>
+    </button>
+  {:else}
+    <!-- At the end of the list the right-hand button adds a route. -->
+    <button class="arrow right add" aria-label="Add route" title="Add route" onclick={onadd}>
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M11 4 V18 M4 11 H18" /></svg>
     </button>
   {/if}
 
@@ -257,6 +264,10 @@
   }
   .arrow.right {
     right: 16px;
+  }
+  .arrow.add {
+    border-color: var(--text-muted);
+    background: var(--hover-bg);
   }
 
   .foot {

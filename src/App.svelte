@@ -1,13 +1,19 @@
 <script lang="ts">
   import { routes, routeVersions, versionFromFile } from './lib/routes/catalog';
   import type { RouteVersion, Track } from './lib/routes/types';
+  import { takeCreatedRouteId } from './lib/routes/create';
   import Home from './lib/views/Home.svelte';
+  import AddRouteDialog from './lib/components/AddRouteDialog.svelte';
   import Workspace from './lib/views/Workspace.svelte';
 
   // ---- Hash routing
   //   #/r/<route>                 home, showing that route
   //   #/r/<route>/map             the route's map page
   //   #/r/<route>/page/<item>     a side-menu page of the route
+  // Just created a route (the page reloaded to pick it up)? Show its slide.
+  const created = takeCreatedRouteId();
+  if (created) history.replaceState(null, '', `#/r/${created}`);
+
   let hash = $state(location.hash);
   $effect(() => {
     const update = () => (hash = location.hash);
@@ -88,6 +94,13 @@
   );
   const versionId = $derived(route ? (selectedVersion[route.id] ?? versions[route.id][0]?.id ?? '') : '');
 
+  let adding = $state(false);
+  function routeCreated(id: string) {
+    // Reload so the route catalog (built from routes/) includes the new folder.
+    history.replaceState(null, '', `#/r/${id}`);
+    location.reload();
+  }
+
   async function addVersion(file: File) {
     const list = versions[route.id];
     try {
@@ -106,7 +119,14 @@
 {#if route}
   <div class="pages">
     <div class="page home" class:away={onRoute} inert={onRoute} aria-hidden={onRoute}>
-      <Home {routes} tracks={homeTracks} {index} onindex={showRoute} onopen={() => go(`#/r/${route.id}/map`)} />
+      <Home
+        {routes}
+        tracks={homeTracks}
+        {index}
+        onindex={showRoute}
+        onopen={() => go(`#/r/${route.id}/map`)}
+        onadd={() => (adding = true)}
+      />
     </div>
     <div class="page workspace" class:away={!onRoute} inert={!onRoute} aria-hidden={!onRoute}>
       {#key route.id}
@@ -125,8 +145,13 @@
     {#if loadError}<p class="toast" role="alert">{loadError}</p>{/if}
   </div>
 {:else}
-  <p class="none">No routes yet. Add one under <code>routes/</code> (see routes/README.md).</p>
+  <div class="none">
+    <p>No routes yet.</p>
+    <button onclick={() => (adding = true)}>Add a route</button>
+  </div>
 {/if}
+
+<AddRouteDialog open={adding} onclose={() => (adding = false)} oncreated={routeCreated} />
 
 <style>
   .pages {
@@ -173,5 +198,15 @@
   .none {
     padding: 40px;
     color: var(--text-muted);
+  }
+  .none button {
+    min-height: 44px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-weight: 600;
+    cursor: pointer;
   }
 </style>

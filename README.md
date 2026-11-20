@@ -15,7 +15,7 @@ npm run build    # production build into dist/
 
 ## Using it
 
-- **Home** (`#/r/<route>`): the big BincioPacking title and one slide per route, each with its route (version 1) sketched on a globe and basic info. Change route with the side arrows, a sideways swipe / trackpad scroll, the ← → keys, or the dots.
+- **Home** (`#/r/<route>`): the big BincioPacking title and one slide per route, each with its route (version 1) sketched on a globe and basic info. Change route with the side arrows, a sideways swipe / trackpad scroll, the ← → keys, or the dots. On the last slide the right-hand button becomes **+**: drop a GPX/TCX file, name the route, and a new slide is created (with `npm run dev`; it writes `routes/<id>/`).
 - **Route page** (`#/r/<route>/map`): scroll or swipe down from a route (or press ↓) to open it; scroll up at the top, or use **All routes**, to go back. It has the route's side menu and the map tools: route versions, base map, split points, elevation profile, stages and the version description.
 - **Side menu**: each route has its own dropdown menu (new routes start with the default Kit / Planning / Route / External links list). Every entry opens a markdown page (`#/r/<route>/page/<id>`); use the pen to edit it. **Edit menu** lets you rename, add and remove sections and pages.
 
